@@ -274,7 +274,6 @@ chown -R ${ME}:${ME} /home/${ME}
 su $ME -c 'k3d cluster create \
 --registry-use k3d-registry.localhost:5500 \
 --config k3d.yaml \
---k3s-server-arg "--no-deploy=traefik" \
 --k3s-server-arg "--no-deploy=servicelb"'
 
 

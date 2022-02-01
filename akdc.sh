@@ -1,0 +1,287 @@
+#!/bin/sh
+
+####### change these values #######
+export ME=akdc
+export FQDN=akdc.cse.ms
+###################################
+
+export DEBIAN_FRONTEND=noninteractive
+export HOME=/root
+
+# Azure creates the user
+# useradd -m -s /bin/bash ${ME}
+
+cd /home/${ME}
+
+echo "starting" >> status
+
+echo "${ME} ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/akdc
+
+# make some directories we will need
+mkdir -p go/src
+mkdir -p .kube
+mkdir -p bin
+mkdir -p .local/bin
+mkdir -p .k9s
+
+git config --system credential.helper store
+
+git config --global user.name bartr
+git config --global user.email bartr@microsoft.com
+
+git config --system core.whitespace blank-at-eol,blank-at-eof,space-before-tab
+git config --system pull.rebase false
+git config --system init.defaultbranch main
+git config --system fetch.prune true
+git config --system core.pager more
+
+# oh my bash
+git clone --depth=1 https://github.com/ohmybash/oh-my-bash.git .oh-my-bash
+cp .oh-my-bash/templates/bashrc.osh-template .bashrc
+
+# add to .bashrc
+echo "" >> .bashrc
+echo "alias k='kubectl'" >> .bashrc
+echo "alias kga='kubectl get all'" >> .bashrc
+echo "alias kgaa='kubectl get all --all-namespaces'" >> .bashrc
+echo "alias kaf='kubectl apply -f'" >> .bashrc
+echo "alias kdelf='kubectl delete -f'" >> .bashrc
+echo "alias kl='kubectl logs'" >> .bashrc
+echo "alias kccc='kubectl config current-context'" >> .bashrc
+echo "alias kcgc='kubectl config get-contexts'" >> .bashrc
+echo "alias kj='kubectl exec -it jumpbox -- bash -l'" >> .bashrc
+echo "alias kje='kubectl exec -it jumpbox -- '" >> .bashrc
+
+echo "" >> .bashrc
+echo "alias ipconfig='ip -4 a show eth0 | grep inet | sed \"s/inet//g\" | sed \"s/ //g\" | cut -d / -f 1'" >> .bashrc
+
+echo "" >> .bashrc
+echo "alias c='cnp'" >> .bashrc
+echo "alias ca='cnp app'" >> .bashrc
+echo "alias cc='cnp app curl'" >> .bashrc
+
+echo "" >> .bashrc
+echo "export GO111MODULE=on" >> .bashrc
+echo 'export PIP=$(ipconfig | tail -n 1)' >> .bashrc
+echo 'export PATH="$PATH:/usr/local/istio/bin:$HOME/.dotnet/tools:$HOME/go/bin"' >> .bashrc
+echo "export FQDN=$FQDN" >> .bashrc
+
+echo "" >> .bashrc
+echo 'complete -F __start_kubectl k' >> .bashrc
+echo 'complete -F __start_kubectl kl' >> .bashrc
+
+# set the IP address
+export PIP=$(ip -4 a show eth0 | grep inet | sed "s/inet//g" | sed "s/ //g" | cut -d '/' -f 1 | tail -n 1)
+
+chown -R ${ME}:${ME} /home/${ME}
+
+# make some system dirs
+mkdir -p /etc/docker
+mkdir -p /etc/caddy
+mkdir -p /prometheus && chown -R 65534:65534 /prometheus
+mkdir -p /grafana
+# cp /workspaces/.cnp-labs/cluster-admin/deploy/grafanadata/grafana.db /grafana
+chown -R 472:0 /grafana
+
+cp /usr/share/zoneinfo/America/Chicago /etc/localtime
+
+# create / add to groups
+groupadd docker
+usermod -aG sudo ${ME}
+usermod -aG admin ${ME}
+usermod -aG docker ${ME}
+gpasswd -a ${ME} sudo
+
+echo "installing base" >> status
+apt-get update
+apt-get install -y apt-utils dialog apt-transport-https ca-certificates
+
+echo "upgrading" >> status
+apt-get upgrade -y 
+apt-get dist-upgrade -y 
+
+echo "installing prereqs" >> status
+apt-get install -y software-properties-common libssl-dev libffi-dev python-dev build-essential lsb-release gnupg-agent
+
+echo "installing utils" >> status
+apt-get install -y curl git wget nano jq zip unzip httpie
+apt-get install -y dnsutils coreutils gnupg2 make bash-completion gettext iputils-ping
+
+echo "adding package sources" >> status
+
+# add caddy sources
+apt-get install -y debian-keyring debian-archive-keyring apt-transport-https
+curl -1sLf https://dl.cloudsmith.io/public/caddy/stable/gpg.key > /etc/apt/trusted.gpg.d/caddy-stable.asc
+curl -1sLf https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt > /etc/apt/sources.list.d/caddy-stable.list
+
+# add Docker repo
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key --keyring /etc/apt/trusted.gpg.d/docker.gpg add -
+add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+
+# add Azure CLI repo
+curl -sL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /etc/apt/trusted.gpg.d/microsoft.asc.gpg
+echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ $(lsb_release -cs) main" > /etc/apt/sources.list.d/azure-cli.list
+
+# add kubenetes repo
+curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
+echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" > /etc/apt/sources.list.d/kubernetes.list
+
+# add dotnet repo
+#echo "deb [arch=amd64] https://packages.microsoft.com/repos/microsoft-ubuntu-$(lsb_release -cs)-prod $(lsb_release -cs) main" > /etc/apt/sources.list.d/dotnetdev.list
+
+# add dotnet
+wget https://packages.microsoft.com/config/ubuntu/21.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+dpkg -i packages-microsoft-prod.deb
+rm packages-microsoft-prod.deb
+
+apt-get update
+
+echo "installing dotnet" >> status
+apt-get install -y dotnet-sdk-5.0
+apt-get install -y dotnet-sdk-6.0
+
+#echo "installing Azure CLI" >> status
+#apt-get install -y azure-cli
+#echo "  (optional) you can run az login and az account set -s YourSubscriptionName now" >> status
+
+echo "installing docker" >> status
+apt-get install -y docker-ce docker-ce-cli
+
+echo "installing kubectl" >> status
+apt-get install -y kubectl
+
+# kubectl auto complete
+kubectl completion bash > /etc/bash_completion.d/kubectl
+
+echo "installing k3d" >> status
+wget -q -O - https://raw.githubusercontent.com/rancher/k3d/main/install.sh | TAG=v4.4.8 bash
+
+echo "Installing Flux"
+curl -s https://fluxcd.io/install.sh | bash
+flux completion bash > /etc/bash_completion.d/flux
+
+echo "Installing Istio"
+curl -L https://istio.io/downloadIstio | sh -
+mv istio* istio
+chmod -R 755 istio
+cp istio/tools/istioctl.bash /etc/bash_completion.d
+chown -R ${ME}:${ME} /home/${ME}
+mv istio /usr/local
+
+echo "installing tools" >> status
+
+VERSION=$(curl -i https://github.com/derailed/k9s/releases/latest | grep "location: https://github.com/" | rev | cut -f 1 -d / | rev | sed 's/\r//')
+wget https://github.com/derailed/k9s/releases/download/$VERSION/k9s_Linux_x86_64.tar.gz
+tar -zxvf k9s_Linux_x86_64.tar.gz -C /usr/local/bin
+rm -f k9s_Linux_x86_64.tar.gz
+
+# install jp (jmespath)
+VERSION=$(curl -i https://github.com/jmespath/jp/releases/latest | grep "location: https://github.com/" | rev | cut -f 1 -d / | rev | sed 's/\r//')
+wget https://github.com/jmespath/jp/releases/download/$VERSION/jp-linux-amd64 -O /usr/local/bin/jp
+chmod +x /usr/local/bin/jp
+
+# change ownership
+chown -R ${ME}:${ME} /home/${ME}
+
+echo "setting up registry" >> status
+# create local registry
+docker network create k3d
+k3d registry create registry.localhost --port 5500
+docker network connect k3d k3d-registry.localhost
+
+# upgrade Ubuntu
+echo "upgrading" >> status
+apt-get update
+apt-get upgrade -y
+apt-get dist-upgrade -y
+apt-get autoremove -y
+
+echo "setting up caddy" >> status
+
+cat << EOF > /etc/caddy/Caddyfile
+${FQDN} {
+  redir /webv /webv/
+  redir /grafana /grafana/
+  redir /prometheus /prometheus/
+  reverse_proxy 127.0.0.1:30080
+}
+
+${FQDN}/grafana/* {
+        uri strip_prefix /grafana
+        reverse_proxy 127.0.0.1:32000
+}
+
+${FQDN}/prometheus/* {
+        reverse_proxy 127.0.0.1:30000
+}
+
+${FQDN}/webv/* {
+        uri strip_prefix /webv
+        reverse_proxy 127.0.0.1:30088
+}
+EOF
+
+# install WebV
+su $ME -c "dotnet tool install -g webvalidate"
+
+echo "creating k3d cluster" >> status
+
+cat << EOF > k3d.yaml
+apiVersion: k3d.io/v1alpha2
+kind: Simple
+servers: 1
+network: k3d
+kubeAPI:
+  hostIP: "0.0.0.0"
+  hostPort: "6443"
+volumes:
+  - volume: /prometheus:/prometheus
+    nodeFilters:
+      - server[0]
+  - volume: /grafana:/grafana
+    nodeFilters:
+      - server[0]
+ports:
+  - port: 30000:30000
+    nodeFilters:
+      - server[0]
+  - port: 30080:30080
+    nodeFilters:
+      - server[0]
+  - port: 30088:30088
+    nodeFilters:
+      - server[0]
+  - port: 32000:32000
+    nodeFilters:
+      - server[0]
+
+options:
+  k3d:
+    wait: true
+    timeout: "60s"
+  k3s:
+    extraServerArgs:
+      - --tls-san=127.0.0.1
+    extraAgentArgs: []
+  kubeconfig:
+    updateDefaultKubeconfig: true
+    switchCurrentContext: true
+EOF
+
+# change ownership
+chown -R ${ME}:${ME} /home/${ME}
+
+su $ME -c 'k3d cluster create \
+--registry-use k3d-registry.localhost:5500 \
+--config k3d.yaml \
+--k3s-server-arg "--no-deploy=traefik" \
+--k3s-server-arg "--no-deploy=servicelb"'
+
+
+# change ownership
+chown -R ${ME}:${ME} /home/${ME}
+
+echo "complete" >> status
+echo "" >> status
+echo "check cluster"
+echo "  k get po -A"

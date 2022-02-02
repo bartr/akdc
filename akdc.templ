@@ -2,7 +2,7 @@
 
 ####### change these values #######
 export ME=akdc
-export FQDN=akdc.cse.ms
+export FQDN={{host}}.cseretail.com
 ###################################
 
 export DEBIAN_FRONTEND=noninteractive
@@ -54,11 +54,6 @@ echo "alias kje='kubectl exec -it jumpbox -- '" >> .bashrc
 
 echo "" >> .bashrc
 echo "alias ipconfig='ip -4 a show eth0 | grep inet | sed \"s/inet//g\" | sed \"s/ //g\" | cut -d / -f 1'" >> .bashrc
-
-echo "" >> .bashrc
-echo "alias c='cnp'" >> .bashrc
-echo "alias ca='cnp app'" >> .bashrc
-echo "alias cc='cnp app curl'" >> .bashrc
 
 echo "" >> .bashrc
 echo "export GO111MODULE=on" >> .bashrc
@@ -276,9 +271,31 @@ su $ME -c 'k3d cluster create \
 --config k3d.yaml \
 --k3s-server-arg "--no-deploy=servicelb"'
 
-
 # change ownership
 chown -R ${ME}:${ME} /home/${ME}
+
+# bootstrap Flux
+flux bootstrap git \
+--url=https://github.com/bartr/edge-gitops \
+--username=bartr \
+--password={{pat}} \
+--token-auth=true \
+--path=deploy/{{host}}
+
+flux create source git akdc \
+--url=https://github.com/bartr/edge-gitops \
+-u=bartr \
+--branch=main \
+--password {{pat}}
+
+flux create kustomization akdc \
+--source GitRepository/akdc \
+--path=deploy/{{host}} \
+--prune true \
+--interval 1m
+
+flux reconcile source git akdc
+
 
 echo "complete" >> status
 echo "" >> status

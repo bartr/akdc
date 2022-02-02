@@ -178,7 +178,7 @@ chmod +x /usr/local/bin/jp
 # change ownership
 chown -R ${ME}:${ME} /home/${ME}
 
-echo "setting up registry" >> status
+echo "creating registry" >> status
 # create local registry
 docker network create k3d
 k3d registry create registry.localhost --port 5500
@@ -278,31 +278,31 @@ echo "bootstrap Flux" >> status
 
 # wait for cluster to be ready
 sleep 30
-kubectl wait node --for condition=ready --all --timeout=30s
+su $ME -c "kubectl wait node --for condition=ready --all --timeout=30s"
 sleep 30
-kubectl wait pod -A --all --for condition=ready --timeout=30s
+su $ME -c "kubectl wait pod -A --all --for condition=ready --timeout=30s"
 
 # bootstrap Flux
-flux bootstrap git \
+su $ME -c "flux bootstrap git \
 --url=https://github.com/bartr/edge-gitops \
 --username=bartr \
 --password={{pat}} \
 --token-auth=true \
---path=deploy/{{host}}
+--path=deploy/{{host}}"
 
-flux create source git akdc \
+su $ME -c "flux create source git akdc \
 --url=https://github.com/bartr/edge-gitops \
 -u=bartr \
 --branch=main \
---password {{pat}}
+--password {{pat}}"
 
-flux create kustomization akdc \
+su $ME -c "flux create kustomization akdc \
 --source GitRepository/akdc \
 --path=deploy/{{host}} \
 --prune true \
---interval 1m
+--interval 1m"
 
-flux reconcile source git akdc
+su $ME -c "flux reconcile source git akdc"
 
 echo "complete" >> status
 echo "" >> status

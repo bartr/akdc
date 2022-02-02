@@ -274,6 +274,13 @@ su $ME -c 'k3d cluster create \
 # change ownership
 chown -R ${ME}:${ME} /home/${ME}
 
+echo "bootstrap Flux" >> status
+
+# wait for cluster to be ready
+kubectl wait node --for condition=ready --all --timeout=60s
+sleep 20
+kubectl wait pod -A --all --for condition=ready --timeout=30s
+
 # bootstrap Flux
 flux bootstrap git \
 --url=https://github.com/bartr/edge-gitops \
@@ -295,7 +302,6 @@ flux create kustomization akdc \
 --interval 1m
 
 flux reconcile source git akdc
-
 
 echo "complete" >> status
 echo "" >> status

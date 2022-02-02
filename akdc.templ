@@ -277,8 +277,9 @@ chown -R ${ME}:${ME} /home/${ME}
 echo "bootstrap Flux" >> status
 
 # wait for cluster to be ready
-kubectl wait node --for condition=ready --all --timeout=60s
-sleep 20
+sleep 30
+kubectl wait node --for condition=ready --all --timeout=30s
+sleep 30
 kubectl wait pod -A --all --for condition=ready --timeout=30s
 
 # bootstrap Flux

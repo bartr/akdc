@@ -23,6 +23,7 @@ mkdir -p .kube
 mkdir -p bin
 mkdir -p .local/bin
 mkdir -p .k9s
+mkdir -p /root/.kube
 
 git config --system credential.helper store
 
@@ -266,43 +267,45 @@ EOF
 # change ownership
 chown -R ${ME}:${ME} /home/${ME}
 
-su $ME -c 'k3d cluster create \
+k3d cluster create \
 --registry-use k3d-registry.localhost:5500 \
 --config k3d.yaml \
---k3s-server-arg "--no-deploy=servicelb"'
+--k3s-server-arg "--no-deploy=servicelb"
+
+cp /root/.kube/config /home/${ME}/.kube/config
 
 # change ownership
 chown -R ${ME}:${ME} /home/${ME}
 
+echo "waiting for cluster to start" >> status
+
+sleep 20
+kubectl wait node --for condition=ready --all --timeout=30s
+sleep 20
+kubectl wait pod -A --all --for condition=ready --timeout=30s
+
 echo "bootstrap Flux" >> status
 
-# wait for cluster to be ready
-sleep 30
-su $ME -c "kubectl wait node --for condition=ready --all --timeout=30s"
-sleep 30
-su $ME -c "kubectl wait pod -A --all --for condition=ready --timeout=30s"
-
-# bootstrap Flux
-su $ME -c "flux bootstrap git \
+flux bootstrap git \
 --url=https://github.com/bartr/edge-gitops \
 --username=bartr \
 --password={{pat}} \
 --token-auth=true \
---path=deploy/{{host}}"
+--path=deploy/{{host}}
 
-su $ME -c "flux create source git akdc \
+flux create source git akdc \
 --url=https://github.com/bartr/edge-gitops \
 -u=bartr \
 --branch=main \
---password {{pat}}"
+--password {{pat}}
 
-su $ME -c "flux create kustomization akdc \
+flux create kustomization akdc \
 --source GitRepository/akdc \
 --path=deploy/{{host}} \
 --prune true \
---interval 1m"
+--interval 1m
 
-su $ME -c "flux reconcile source git akdc"
+flux reconcile source git akdc
 
 echo "complete" >> status
 echo "" >> status

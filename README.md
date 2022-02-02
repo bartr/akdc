@@ -9,26 +9,40 @@
 
 > From Azure Cloud Shell
 
+- Clone this repo
+
 ```bash
 
 # clone this repo
 git clone https://github.com/bartr/akdc
 cd akdc
 
-# change this to be unique
+```
+
+- Set env variables
+
+```bash
+
+# change these as needed
 export AKDC_RG=akdc
+export AKDC_HOST=akdc
+export AKDC_PAT=YourPAT
 
 export AKDC_LOC=centralus
+
+```
+
+- Create the k3d cluster
+
+```bash
 
 # create the RG
 az group create -l $AKDC_LOC -n $AKDC_RG
 
 # create the install script from the template
 
-export AKDC_HOST=akdc
-export AKDC_PAT=YourPAT
-
 # replace the host and pat
+rm -f akdc.sh
 sed "s/{{pat}}/$AKDC_PAT/g" akdc.templ | sed "s/{{host}}/$AKDC_HOST/g" > akdc.sh
 
 # create the VM
@@ -47,6 +61,7 @@ export AKDC_IP=$(az vm create \
 echo $AKDC_IP
 
 # ssh into the VM
+sleep 5
 ssh akdc@$AKDC_IP
 
 ```

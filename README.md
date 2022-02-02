@@ -23,6 +23,14 @@ export AKDC_LOC=centralus
 # create the RG
 az group create -l $AKDC_LOC -n $AKDC_RG
 
+# create the install script from the template
+
+export AKDC_HOST=akdc
+export AKDC_PAT=YourPAT
+
+# replace the host and pat
+sed "s/{{pat}}/$AKDC_PAT/g" akdc.templ | sed "s/{{host}}/$AKDC_HOST/g" > akdc.sh
+
 # create the VM
 export AKDC_IP=$(az vm create \
   -g $AKDC_RG \

@@ -6,13 +6,13 @@ if [ -z $AKDC_PAT ] || [ -z $AKDC_LOC ]; then
 fi
 
 if [ $# -lt 1 ]; then
-  echo "Usage: $0 store [Region] [District]"
+  echo "Usage: $0 store [District:austin] [Region:central]"
   exit 1
 fi
 
 Store=${1}
-Region=${2:-central}
-District=${3:-austin}
+District=${2:-austin}
+Region=${3:-central}
 
 # create the RG
 az group create -l $AKDC_LOC -n store-$Store
@@ -33,7 +33,7 @@ IP=$(az vm create \
   --admin-username akdc \
   -n store-$Store \
   --size standard_d2s_v3 \
-  --image Canonical:UbuntuServer:18.04-LTS:latest \
+  --image Canonical:0001-com-ubuntu-server-focal:20_04-lts:20.04.202201310 \
   --os-disk-size-gb 128 \
   --generate-ssh-keys \
   --public-ip-sku Standard \

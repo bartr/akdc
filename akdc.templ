@@ -286,6 +286,9 @@ cat << EOF > sync.sh
 #!/bin/bash
 
 flux reconcile source git gitops
+
+kubectl get pods -A
+
 EOF
 
 cat << EOF > flux-reset.sh
@@ -325,6 +328,9 @@ flux create kustomization region \
 --interval 1m
 
 flux reconcile source git gitops
+
+kubectl get pods -A
+
 EOF
 
 # change ownership

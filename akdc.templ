@@ -282,6 +282,11 @@ sleep 20
 
 echo "bootstrap Flux" >> status
 
+cat << EOF > /home/${ME}/flux-reset.sh
+#!/bin/bash
+
+flux uninstall
+
 flux bootstrap git \
 --url=https://github.com/retaildevcrews/edge-gitops \
 --username=bartr \
@@ -295,27 +300,71 @@ flux create source git edge-gitops \
 --branch=main \
 --password {{pat}}
 
-flux create kustomization store-{{store}} \
+flux create kustomization store \
 --source GitRepository/edge-gitops \
 --path=./deploy/store-{{store}} \
 --prune true \
 --interval 1m
 
-flux create kustomization district-{{district}} \
+flux create kustomization district \
 --source GitRepository/edge-gitops \
 --path=./deploy/district-{{district}} \
 --prune true \
 --interval 1m
 
-flux create kustomization region-{{region}} \
+flux create kustomization region \
 --source GitRepository/edge-gitops \
 --path=./deploy/region-{{region}} \
 --prune true \
 --interval 1m
 
 flux reconcile source git edge-gitops
+EOF
+
+# change ownership
+chmod +x /home/${ME}/flux-reset.sh
+chown -R ${ME}:${ME} /home/${ME}
+
+# bootstrap flux
+flux bootstrap git \
+--url=https://github.com/retaildevcrews/edge-gitops \
+--username=bartr \
+--password={{pat}} \
+--token-auth=true \
+--path=./deploy/store-{{store}}
+
+# create the application GitOps source
+flux create source git edge-gitops \
+--url=https://github.com/retaildevcrews/edge-gitops \
+-u=bartr \
+--branch=main \
+--password {{pat}}
+
+# watch the store directory
+flux create kustomization store \
+--source GitRepository/edge-gitops \
+--path=./deploy/store-{{store}} \
+--prune true \
+--interval 1m
+
+# watch the district directory
+flux create kustomization district \
+--source GitRepository/edge-gitops \
+--path=./deploy/district-{{district}} \
+--prune true \
+--interval 1m
+
+# watch the region directory
+flux create kustomization region \
+--source GitRepository/edge-gitops \
+--path=./deploy/region-{{region}} \
+--prune true \
+--interval 1m
+
+# force reconciliation
+flux reconcile source git edge-gitops
 
 echo "complete" >> status
 echo "" >> status
-echo "check cluster"
-echo "  k get po -A"
+echo "check cluster" >> status
+echo "  k get po -A" >> status

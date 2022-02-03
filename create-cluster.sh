@@ -32,12 +32,14 @@ IP=$(az vm create \
   -g $Store \
   --admin-username akdc \
   -n $Store \
-  --size standard_d2s_v3 \
-  --image Canonical:0001-com-ubuntu-server-focal:20_04-lts:20.04.202201310 \
+  --size standard_D2as_v5 \
+  --image Canonical:0001-com-ubuntu-server-focal:20_04-lts-gen2:latest \
   --os-disk-size-gb 128 \
+  --storage-sku Premium_LRS \
   --generate-ssh-keys \
   --public-ip-sku Standard \
-  --query publicIpAddress -o tsv \
+  --query publicIpAddress \
+  -o tsv \
   --custom-data $Store.sh)
 
 echo "$Store  $IP"

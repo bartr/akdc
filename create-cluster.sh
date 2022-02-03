@@ -28,7 +28,7 @@ sed "s/{{pat}}/$AKDC_PAT/g" ./akdc.templ | \
     > store-$Store.sh
 
 # create the VM
-export AKDC_IP=$(az vm create \
+IP=$(az vm create \
   -g store-$Store \
   --admin-username akdc \
   -n store-$Store \
@@ -40,4 +40,4 @@ export AKDC_IP=$(az vm create \
   --query publicIpAddress -o tsv \
   --custom-data store-$Store.sh)
 
-echo $AKDC_IP
+echo "$Store  $IP"

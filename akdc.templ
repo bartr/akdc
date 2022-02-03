@@ -286,7 +286,7 @@ echo "bootstrap Flux" >> status
 cat << EOF > flux-reset.sh
 #!/bin/bash
 
-flux uninstall
+flux uninstall --silent
 
 flux bootstrap git \
 --url=https://github.com/retaildevcrews/edge-gitops \

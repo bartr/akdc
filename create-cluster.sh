@@ -6,7 +6,7 @@ if [ -z $AKDC_PAT ] || [ -z $AKDC_LOC ]; then
 fi
 
 if [ $# -lt 1 ]; then
-  echo "Usage: $0 store [District:austin] [Region:central]"
+  echo "Usage: $0 store [District:tx-austin] [Region:central]"
   exit 1
 fi
 

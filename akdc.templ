@@ -25,11 +25,10 @@ mkdir -p .local/bin
 mkdir -p .k9s
 mkdir -p /root/.kube
 
+# configure git CLI
+git config --global user.name autogitops
+git config --global user.email autogitops@outlook.com
 git config --system credential.helper store
-
-git config --global user.name bartr
-git config --global user.email bartr@microsoft.com
-
 git config --system core.whitespace blank-at-eol,blank-at-eof,space-before-tab
 git config --system pull.rebase false
 git config --system init.defaultbranch main
@@ -93,8 +92,8 @@ apt-get update
 apt-get install -y apt-utils dialog apt-transport-https ca-certificates
 
 echo "upgrading" >> status
-apt-get upgrade -y 
-apt-get dist-upgrade -y 
+apt-get upgrade -y
+apt-get dist-upgrade -y
 
 echo "installing prereqs" >> status
 apt-get install -y software-properties-common libssl-dev libffi-dev python-dev build-essential lsb-release gnupg-agent
@@ -123,18 +122,15 @@ curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add -
 echo "deb https://apt.kubernetes.io/ kubernetes-xenial main" > /etc/apt/sources.list.d/kubernetes.list
 
 # add dotnet repo
-#echo "deb [arch=amd64] https://packages.microsoft.com/repos/microsoft-ubuntu-$(lsb_release -cs)-prod $(lsb_release -cs) main" > /etc/apt/sources.list.d/dotnetdev.list
-
-# add dotnet
 wget https://packages.microsoft.com/config/ubuntu/21.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
 dpkg -i packages-microsoft-prod.deb
 rm packages-microsoft-prod.deb
 
 apt-get update
 
-echo "installing dotnet" >> status
-apt-get install -y dotnet-sdk-5.0
-apt-get install -y dotnet-sdk-6.0
+#echo "installing dotnet" >> status
+#apt-get install -y dotnet-sdk-5.0
+#apt-get install -y dotnet-sdk-6.0
 
 #echo "installing Azure CLI" >> status
 #apt-get install -y azure-cli
@@ -189,7 +185,6 @@ docker network connect k3d k3d-registry.localhost
 echo "upgrading" >> status
 apt-get update
 apt-get upgrade -y
-apt-get dist-upgrade -y
 apt-get autoremove -y
 
 echo "setting up caddy" >> status
@@ -218,7 +213,7 @@ ${FQDN}/webv/* {
 EOF
 
 # install WebV
-su $ME -c "dotnet tool install -g webvalidate"
+#su $ME -c "dotnet tool install -g webvalidate"
 
 echo "creating k3d cluster" >> status
 
@@ -283,6 +278,7 @@ sleep 20
 kubectl wait node --for condition=ready --all --timeout=30s
 sleep 20
 kubectl wait pod -A --all --for condition=ready --timeout=30s
+sleep 20
 
 echo "bootstrap Flux" >> status
 
@@ -317,7 +313,7 @@ flux create kustomization region-{{region}} \
 --prune true \
 --interval 1m
 
-flux reconcile source git akdc
+flux reconcile source git edge-gitops
 
 echo "complete" >> status
 echo "" >> status

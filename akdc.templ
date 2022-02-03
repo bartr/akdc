@@ -2,7 +2,7 @@
 
 ####### change these values #######
 export ME=akdc
-export FQDN=store-{{host}}.cseretail.com
+export FQDN=store-{{store}}.cseretail.com
 ###################################
 
 export DEBIAN_FRONTEND=noninteractive
@@ -291,7 +291,7 @@ flux bootstrap git \
 --username=bartr \
 --password={{pat}} \
 --token-auth=true \
---path=./deploy/store-{{host}}
+--path=./deploy/store-{{store}}
 
 flux create source git edge-gitops \
 --url=https://github.com/retaildevcrews/edge-gitops \
@@ -299,9 +299,9 @@ flux create source git edge-gitops \
 --branch=main \
 --password {{pat}}
 
-flux create kustomization store-{{host}} \
+flux create kustomization store-{{store}} \
 --source GitRepository/edge-gitops \
---path=./deploy/store-{{host}} \
+--path=./deploy/store-{{store}} \
 --prune true \
 --interval 1m
 

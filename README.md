@@ -27,7 +27,7 @@ cd akdc
 export AKDC_PAT=YourPAT
 
 # austin-101, austin-102, austin-103, austin-104, austin-105
-export AKDC_HOST=austin-101
+export AKDC_STORE=austin-101
 
 # central, east or west
 export AKDC_REGION=central
@@ -44,21 +44,21 @@ export AKDC_LOC=centralus
 ```bash
 
 # create the RG
-az group create -l $AKDC_LOC -n store-$AKDC_HOST
+az group create -l $AKDC_LOC -n store-$AKDC_STORE
 
 # create the install script from the template
 
 # replace the host, pat, district and region
 rm -f akdc.sh
 sed "s/{{pat}}/$AKDC_PAT/g" akdc.templ | \
-    sed "s/{{host}}/$AKDC_HOST/g" \
+    sed "s/{{store}}/$AKDC_STORE/g" \
     sed "s/{{district}}/$AKDC_DISTRICT/g" \
     sed "s/{{region}}/$AKDC_REGION/g" \
     > akdc.sh
 
 # create the VM
 export AKDC_IP=$(az vm create \
-  -g $AKDC_HOST \
+  -g $AKDC_STORE \
   --admin-username akdc \
   -n akdc \
   --size standard_d2s_v3 \

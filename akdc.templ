@@ -51,6 +51,7 @@ echo "alias kccc='kubectl config current-context'" >> .bashrc
 echo "alias kcgc='kubectl config get-contexts'" >> .bashrc
 echo "alias kj='kubectl exec -it jumpbox -- bash -l'" >> .bashrc
 echo "alias kje='kubectl exec -it jumpbox -- '" >> .bashrc
+echo "alias sync='flux reconcile source git gitops && kubectl get pods -A'" >> .bashrc
 
 echo "" >> .bashrc
 echo "alias ipconfig='ip -4 a show eth0 | grep inet | sed \"s/inet//g\" | sed \"s/ //g\" | cut -d / -f 1'" >> .bashrc
@@ -267,13 +268,13 @@ k3d cluster create \
 --config k3d.yaml \
 --k3s-server-arg "--no-deploy=servicelb"
 
-cp /root/.kube/config /home/${ME}/.kube/config
-
 # change ownership
+cp /root/.kube/config /home/${ME}/.kube/config
 chown -R ${ME}:${ME} /home/${ME}
 
 echo "waiting for cluster to start" >> status
 
+# we need the sleep commands to prevent intermittent timing failures
 sleep 20
 kubectl wait node --for condition=ready --all --timeout=30s
 sleep 20
@@ -281,15 +282,6 @@ kubectl wait pod -A --all --for condition=ready --timeout=30s
 sleep 20
 
 echo "bootstrap Flux" >> status
-
-cat << EOF > sync.sh
-#!/bin/bash
-
-flux reconcile source git gitops
-
-kubectl get pods -A
-
-EOF
 
 cat << EOF > flux-reset.sh
 #!/bin/bash
@@ -323,7 +315,7 @@ flux create kustomization district \
 
 flux create kustomization region \
 --source GitRepository/gitops \
---path=./deploy/region-{{region}} \
+--path=./deploy/{{region}} \
 --prune true \
 --interval 1m
 
@@ -334,48 +326,10 @@ kubectl get pods -A
 EOF
 
 # change ownership
-chmod +x sync.sh
 chmod +x flux-reset.sh
 chown -R ${ME}:${ME} /home/${ME}
 
-# bootstrap flux
-flux bootstrap git \
---url=https://github.com/retaildevcrews/edge-gitops \
---username=bartr \
---password={{pat}} \
---token-auth=true \
---path=./deploy/{{store}}
-
-# create the application GitOps source
-flux create source git gitops \
---url=https://github.com/retaildevcrews/edge-gitops \
--u=bartr \
---branch=main \
---password {{pat}}
-
-# watch the store directory
-flux create kustomization store \
---source GitRepository/gitops \
---path=./deploy/{{store}} \
---prune true \
---interval 1m
-
-# watch the district directory
-flux create kustomization district \
---source GitRepository/gitops \
---path=./deploy/{{district}} \
---prune true \
---interval 1m
-
-# watch the region directory
-flux create kustomization region \
---source GitRepository/gitops \
---path=./deploy/region-{{region}} \
---prune true \
---interval 1m
-
-# force reconciliation
-flux reconcile source git gitops
+./flux-reset.sh
 
 echo "complete" >> status
 echo "" >> status

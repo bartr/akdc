@@ -5,14 +5,22 @@ if [ -z $AKDC_PAT ] || [ -z $AKDC_LOC ]; then
   exit 1
 fi
 
-if [ $# -lt 1 ]; then
-  echo "Usage: $0 store [District:tx-austin] [Region:central]"
+if [ $# -lt 4 ]; then
+  echo "Usage: $0 Region State City Store-Number"
   exit 1
 fi
 
-Store=${1}
-District=${2:-tx-austin}
-Region=${3:-central}
+Region=${1}
+State=${2}
+City=${3}
+Number=${4}
+Disrict=$Region-$State-$City
+Store=$District-$Number
+
+echo $Region
+echo $District
+echo $Store
+exit 0
 
 # create the RG
 az group create -l $AKDC_LOC -n $Store

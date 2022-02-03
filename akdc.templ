@@ -2,7 +2,7 @@
 
 ####### change these values #######
 export ME=akdc
-export FQDN={{host}}.cseretail.com
+export FQDN=store-{{host}}.cseretail.com
 ###################################
 
 export DEBIAN_FRONTEND=noninteractive
@@ -287,21 +287,33 @@ kubectl wait pod -A --all --for condition=ready --timeout=30s
 echo "bootstrap Flux" >> status
 
 flux bootstrap git \
---url=https://github.com/bartr/edge-gitops \
+--url=https://github.com/retaildevcrews/edge-gitops \
 --username=bartr \
 --password={{pat}} \
 --token-auth=true \
---path=deploy/{{host}}
+--path=./deploy/store-{{host}}
 
-flux create source git akdc \
---url=https://github.com/bartr/edge-gitops \
+flux create source git edge-gitops \
+--url=https://github.com/retaildevcrews/edge-gitops \
 -u=bartr \
 --branch=main \
 --password {{pat}}
 
-flux create kustomization akdc \
---source GitRepository/akdc \
---path=deploy/{{host}} \
+flux create kustomization store-{{host}} \
+--source GitRepository/edge-gitops \
+--path=./deploy/store-{{host}} \
+--prune true \
+--interval 1m
+
+flux create kustomization district-{{district}} \
+--source GitRepository/edge-gitops \
+--path=./deploy/district-{{district}} \
+--prune true \
+--interval 1m
+
+flux create kustomization region-{{region}} \
+--source GitRepository/edge-gitops \
+--path=./deploy/region-{{region}} \
 --prune true \
 --interval 1m
 

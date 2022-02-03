@@ -9,6 +9,24 @@
 
 > From Azure Cloud Shell
 
+- Add to your .bashrc
+
+```bash
+
+# Flux needs a PAT for the repo
+export AKDC_PAT=YourPAT
+
+# helper function to ssh by store name
+ss() {
+  # run ssh using the ips file
+  ssh akdc@$(cat ips | grep $1 | tail -1 | cut -f2)
+}
+
+# source the changes
+source $HOME/.bashrc
+
+```
+
 - Clone this repo
 
 ```bash
@@ -23,26 +41,42 @@ cd akdc
 
 ```bash
 
-# set this value
+# set this value (if not set in .bashrc)
 export AKDC_PAT=YourPAT
 
-export AKDC_LOC=centralus
+# check the value
+echo $AKDC_PAT
 
 ```
 
 - Create the k3d cluster
 
+- Valid params (case sensitive!)
+
+```text
+Region	State	City
+central	tx		austin
+central	tx		dallas
+central	tx		houston
+central	mo		kc
+central	mo		stlouis
+east	ga		athens
+east	ga		atlanta
+east	nc		charlotte
+east	nc		raleigh
+west	ca		la
+west	ca		sd
+west	ca		sfo
+west	wa		seattle
+
+Number - 101, 102, 103
+
+```
+
 ```bash
 
 # run create-cluster.sh
-
-# valid params
-# to use other values, add the directory to /deploy in the edge-gitops repo
-# Store - austin-101  austin-102  austin-103  austin-104  austin-105
-# Region - central  east  west (default: central)
-# District - austin  dallas  houston  sanantonio  texas (default: austin)
-
-./create-cluster.sh Store [Region] [District]
+./create-cluster.sh Region State City Number [Azure Region: centralus]
 
 ```
 
@@ -53,14 +87,15 @@ export AKDC_LOC=centralus
 ```bash
 
 # ssh into the VM
-ssh akdc@ip-from-output
+# use the full store name Region-State-City-Number
+ss akdc@central-tx-austin-101
 
 # check the VM setup status
 # wait for "complete"
 cat status
 
-# check the cluster
-k get po -A
+# force Flux to sync
+sync
 
 ```
 

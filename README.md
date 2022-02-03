@@ -26,15 +26,6 @@ cd akdc
 # set this value
 export AKDC_PAT=YourPAT
 
-# austin-101, austin-102, austin-103, austin-104, austin-105
-export AKDC_STORE=austin-101
-
-# central, east or west
-export AKDC_REGION=central
-
-# austin, dallas, houston, sanantonio, texas
-export AKDC_DISTRICT=austin
-
 export AKDC_LOC=centralus
 
 ```
@@ -43,37 +34,15 @@ export AKDC_LOC=centralus
 
 ```bash
 
-# create the RG
-az group create -l $AKDC_LOC -n store-$AKDC_STORE
+# run create-cluster.sh
 
-# create the install script from the template
+# valid params
+# to use other values, add the directory to /deploy in the edge-gitops repo
+# Store - austin-101  austin-102  austin-103  austin-104  austin-105
+# Region - central  east  west (default: central)
+# District - austin  dallas  houston  sanantonio  texas (default: austin)
 
-# replace the host, pat, district and region
-rm -f $AKDC_STORE.sh
-sed "s/{{pat}}/$AKDC_PAT/g" akdc.templ | \
-    sed "s/{{store}}/$AKDC_STORE/g" \
-    sed "s/{{district}}/$AKDC_DISTRICT/g" \
-    sed "s/{{region}}/$AKDC_REGION/g" \
-    > akdc.sh
-
-# create the VM
-export AKDC_IP=$(az vm create \
-  -g $AKDC_STORE \
-  --admin-username akdc \
-  -n akdc \
-  --size standard_d2s_v3 \
-  --image Canonical:UbuntuServer:18.04-LTS:latest \
-  --os-disk-size-gb 128 \
-  --generate-ssh-keys \
-  --public-ip-sku Standard \
-  --query publicIpAddress -o tsv \
-  --custom-data $AKDC_STORE.sh)
-
-echo $AKDC_IP
-
-# ssh into the VM
-sleep 5
-ssh akdc@$AKDC_IP
+./create-cluster.sh Store [Region] [District]
 
 ```
 
@@ -82,6 +51,9 @@ ssh akdc@$AKDC_IP
 - Wait for VM and k3d to install
 
 ```bash
+
+# ssh into the VM
+ssh akdc@ip-from-output
 
 # check the VM setup status
 # wait for "complete"

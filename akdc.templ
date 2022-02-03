@@ -282,7 +282,13 @@ sleep 20
 
 echo "bootstrap Flux" >> status
 
-cat << EOF > /home/${ME}/flux-reset.sh
+cat << EOF > sync.sh
+#!/bin/bash
+
+flux reconcile source git gitops
+EOF
+
+cat << EOF > flux-reset.sh
 #!/bin/bash
 
 flux uninstall
@@ -294,35 +300,36 @@ flux bootstrap git \
 --token-auth=true \
 --path=./deploy/{{store}}
 
-flux create source git edge-gitops \
+flux create source git gitops \
 --url=https://github.com/retaildevcrews/edge-gitops \
 -u=bartr \
 --branch=main \
 --password {{pat}}
 
 flux create kustomization store \
---source GitRepository/edge-gitops \
+--source GitRepository/gitops \
 --path=./deploy/{{store}} \
 --prune true \
 --interval 1m
 
 flux create kustomization district \
---source GitRepository/edge-gitops \
+--source GitRepository/gitops \
 --path=./deploy/{{district}} \
 --prune true \
 --interval 1m
 
 flux create kustomization region \
---source GitRepository/edge-gitops \
+--source GitRepository/gitops \
 --path=./deploy/region-{{region}} \
 --prune true \
 --interval 1m
 
-flux reconcile source git edge-gitops
+flux reconcile source git gitops
 EOF
 
 # change ownership
-chmod +x /home/${ME}/flux-reset.sh
+chmod +x sync.sh
+chmod +x flux-reset.sh
 chown -R ${ME}:${ME} /home/${ME}
 
 # bootstrap flux
@@ -334,7 +341,7 @@ flux bootstrap git \
 --path=./deploy/{{store}}
 
 # create the application GitOps source
-flux create source git edge-gitops \
+flux create source git gitops \
 --url=https://github.com/retaildevcrews/edge-gitops \
 -u=bartr \
 --branch=main \
@@ -342,27 +349,27 @@ flux create source git edge-gitops \
 
 # watch the store directory
 flux create kustomization store \
---source GitRepository/edge-gitops \
+--source GitRepository/gitops \
 --path=./deploy/{{store}} \
 --prune true \
 --interval 1m
 
 # watch the district directory
 flux create kustomization district \
---source GitRepository/edge-gitops \
+--source GitRepository/gitops \
 --path=./deploy/{{district}} \
 --prune true \
 --interval 1m
 
 # watch the region directory
 flux create kustomization region \
---source GitRepository/edge-gitops \
+--source GitRepository/gitops \
 --path=./deploy/region-{{region}} \
 --prune true \
 --interval 1m
 
 # force reconciliation
-flux reconcile source git edge-gitops
+flux reconcile source git gitops
 
 echo "complete" >> status
 echo "" >> status

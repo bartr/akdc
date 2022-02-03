@@ -49,7 +49,7 @@ az group create -l $AKDC_LOC -n store-$AKDC_STORE
 # create the install script from the template
 
 # replace the host, pat, district and region
-rm -f akdc.sh
+rm -f $AKDC_STORE.sh
 sed "s/{{pat}}/$AKDC_PAT/g" akdc.templ | \
     sed "s/{{store}}/$AKDC_STORE/g" \
     sed "s/{{district}}/$AKDC_DISTRICT/g" \
@@ -67,7 +67,7 @@ export AKDC_IP=$(az vm create \
   --generate-ssh-keys \
   --public-ip-sku Standard \
   --query publicIpAddress -o tsv \
-  --custom-data akdc.sh)
+  --custom-data $AKDC_STORE.sh)
 
 echo $AKDC_IP
 

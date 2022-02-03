@@ -11,7 +11,7 @@ if [ $# -lt 1 ]; then
 fi
 
 Store=${1}
-District=${2:-austin}
+District=${2:-tx-austin}
 Region=${3:-central}
 
 # create the RG

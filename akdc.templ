@@ -292,7 +292,7 @@ flux bootstrap git \
 --username=bartr \
 --password={{pat}} \
 --token-auth=true \
---path=./deploy/store-{{store}}
+--path=./deploy/{{store}}
 
 flux create source git edge-gitops \
 --url=https://github.com/retaildevcrews/edge-gitops \
@@ -302,13 +302,13 @@ flux create source git edge-gitops \
 
 flux create kustomization store \
 --source GitRepository/edge-gitops \
---path=./deploy/store-{{store}} \
+--path=./deploy/{{store}} \
 --prune true \
 --interval 1m
 
 flux create kustomization district \
 --source GitRepository/edge-gitops \
---path=./deploy/district-{{district}} \
+--path=./deploy/{{district}} \
 --prune true \
 --interval 1m
 
@@ -331,7 +331,7 @@ flux bootstrap git \
 --username=bartr \
 --password={{pat}} \
 --token-auth=true \
---path=./deploy/store-{{store}}
+--path=./deploy/{{store}}
 
 # create the application GitOps source
 flux create source git edge-gitops \
@@ -343,14 +343,14 @@ flux create source git edge-gitops \
 # watch the store directory
 flux create kustomization store \
 --source GitRepository/edge-gitops \
---path=./deploy/store-{{store}} \
+--path=./deploy/{{store}} \
 --prune true \
 --interval 1m
 
 # watch the district directory
 flux create kustomization district \
 --source GitRepository/edge-gitops \
---path=./deploy/district-{{district}} \
+--path=./deploy/{{district}} \
 --prune true \
 --interval 1m
 

@@ -15,3 +15,5 @@ az group delete -y --no-wait -g central-mo-stlouis-103
 az group delete -y --no-wait -g central-mo-kc-101
 az group delete -y --no-wait -g central-mo-kc-102
 az group delete -y --no-wait -g central-mo-kc-103
+
+az group list -o table | sort | grep central-

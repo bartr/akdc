@@ -41,3 +41,4 @@ IP=$(az vm create \
   --custom-data store-$Store.sh)
 
 echo "$Store  $IP"
+echo "$Store  $IP" >> ips

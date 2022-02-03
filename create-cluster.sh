@@ -20,12 +20,12 @@ az group create -l $AKDC_LOC -n $Store
 # create the install script from the template
 
 # replace the host, pat, district and region
-rm -f $Store.sh
+rm -f cluster-$Store.sh
 sed "s/{{pat}}/$AKDC_PAT/g" ./akdc.templ | \
     sed "s/{{store}}/$Store/g" | \
     sed "s/{{district}}/$District/g" | \
     sed "s/{{region}}/$Region/g" \
-    > $Store.sh
+    > cluster-$Store.sh
 
 # create the VM
 IP=$(az vm create \
@@ -40,7 +40,7 @@ IP=$(az vm create \
   --public-ip-sku Standard \
   --query publicIpAddress \
   -o tsv \
-  --custom-data $Store.sh)
+  --custom-data cluster-$Store.sh)
 
 echo "$Store  $IP"
-echo "$Store  $IP" >> ips
+echo "$Store\t$IP" >> ips

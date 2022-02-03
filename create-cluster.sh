@@ -47,4 +47,4 @@ IP=$(az vm create \
   --custom-data cluster-$Store.sh)
 
 echo "$Store  $IP"
-echo -e "$Store\t$IP" >> ips
+echo -e "$City-$Number\t$IP" >> ips

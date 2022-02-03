@@ -1,12 +1,12 @@
 #!/bin/bash
 
-if [ -z $AKDC_PAT ] || [ -z $AKDC_LOC ]; then
-  echo "Please set AKDC_PAT and AKDC_LOC env variables"
+if [ -z $AKDC_PAT ]; then
+  echo "Please export AKDC_PAT env variables"
   exit 1
 fi
 
 if [ $# -lt 4 ]; then
-  echo "Usage: $0 Region State City Store-Number"
+  echo "Usage: $0 Region State City Store-Number [AzureRegion:centralus]"
   exit 1
 fi
 
@@ -14,16 +14,12 @@ Region=${1}
 State=${2}
 City=${3}
 Number=${4}
-Disrict=$Region-$State-$City
-Store=$District-$Number
-
-echo $Region
-echo $District
-echo $Store
-exit 0
+Location=${5:-centralus}
+District=${Region}-${State}-${City}
+Store=${District}-${Number}
 
 # create the RG
-az group create -l $AKDC_LOC -n $Store
+az group create -l $Location -n $Store
 
 # create the install script from the template
 
